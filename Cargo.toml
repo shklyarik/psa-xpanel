@@ -1,0 +1,11 @@
+[package]
+name = "psa-xpanel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+x11rb = "0.13"
+chrono = "0.4"
+ab_glyph = "0.2"
+image = "0.24"
+libc = "0.2"
