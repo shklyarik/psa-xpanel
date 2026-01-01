@@ -14,7 +14,7 @@ use x11rb::CURRENT_TIME;
 use ab_glyph::{FontRef, Font, PxScale, ScaleFont, point};
 use image::{RgbaImage, ImageBuffer, imageops::FilterType};
 
-// ... (КОНСТАНТЫ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ) ...
+// ... (CONSTANTS REMAIN UNCHANGED) ...
 const PANEL_HEIGHT: u16 = 38;
 const ICON_SIZE: u16 = 24;
 const BG_COLOR: u32 = 0x1d1f21;
@@ -31,7 +31,7 @@ const FONT_SIZE_DATE: f32 = 12.0;
 const TEXT_Y_OFFSET: i16 = 11;
 const ICON_Y_OFFSET: i16 = 6;
 
-// ... (STRUCT CachedWindowData ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ) ...
+// ... (STRUCT CachedWindowData REMAINS UNCHANGED) ...
 struct CachedWindowData {
     title: String,
     icon_buffer: Option<Vec<u8>>,
@@ -39,7 +39,7 @@ struct CachedWindowData {
     icon_height: u16,
 }
 
-// В AppState добавим буфер для списка окон, чтобы не аллоцировать его каждый кадр (Оптимизация)
+// In AppState, we add a buffer for the window list to avoid allocating it every frame (Optimization)
 struct AppState<'a> {
     conn: RustConnection,
     atoms: Atoms,
@@ -55,17 +55,17 @@ struct AppState<'a> {
     window_cache: HashMap<Window, CachedWindowData>,
     hovered_window: Option<Window>,
     render_buffer: Vec<u8>,
-    raw_windows_buf: Vec<Window>, // <--- !!! Добавлено для оптимизации
+    raw_windows_buf: Vec<Window>, // <--- !!! Added for optimization
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // ... (ЗАГРУЗКА ШРИФТОВ БЕЗ ИЗМЕНЕНИЙ) ...
+    // ... (FONT LOADING UNCHANGED) ...
     let font_path = if std::path::Path::new("/usr/share/fonts/TTF/DejaVuSans.ttf").exists() {
         "/usr/share/fonts/TTF/DejaVuSans.ttf"
     } else {
         FONT_PATH
     };
-    let mut font_file = File::open(font_path).or_else(|_| File::open(FONT_PATH)).map_err(|_| format!("Не удалось найти шрифт."))?;
+    let mut font_file = File::open(font_path).or_else(|_| File::open(FONT_PATH)).map_err(|_| format!("Could not find font."))?;
     let mut font_data = Vec::new();
     font_file.read_to_end(&mut font_data)?;
     let font = FontRef::try_from_slice(&font_data)?;
@@ -83,7 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let y_pos = (screen_height - PANEL_HEIGHT) as i16;
 
-    // !!! ИЗМЕНЕНИЕ 1: Добавляем EventMask::LEAVE_WINDOW !!!
+    // !!! CHANGE 1: Adding EventMask::LEAVE_WINDOW !!!
     let win_values = CreateWindowAux::new()
         .background_pixel(BG_COLOR)
         .event_mask(EventMask::EXPOSURE | EventMask::PROPERTY_CHANGE | EventMask::BUTTON_PRESS | EventMask::POINTER_MOTION | EventMask::LEAVE_WINDOW);
@@ -94,7 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         WindowClass::INPUT_OUTPUT, screen.root_visual, &win_values,
     )?;
 
-    // ... (ОСТАЛЬНАЯ НАСТРОЙКА ОКНА БЕЗ ИЗМЕНЕНИЙ) ...
+    // ... (REST OF WINDOW SETUP UNCHANGED) ...
     conn.create_pixmap(screen.root_depth, pixmap_id, win_id, width, PANEL_HEIGHT)?;
     conn.change_property32(PropMode::REPLACE, win_id, atoms._net_wm_window_type, atoms.atom, &[atoms._net_wm_window_type_dock])?;
     conn.change_property32(PropMode::REPLACE, win_id, atoms._net_wm_desktop, atoms.cardinal, &[0xFFFFFFFF])?;
@@ -133,7 +133,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         window_cache: HashMap::new(),
         hovered_window: None,
         render_buffer: Vec::with_capacity(2048),
-        raw_windows_buf: Vec::with_capacity(64), // Инициализация буфера
+        raw_windows_buf: Vec::with_capacity(64), // Buffer initialization
     };
 
     redraw(&mut app)?;
@@ -180,21 +180,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if e.event_x != app.mouse_x {
                         app.mouse_x = e.event_x;
                         let new_hovered = get_hovered_window(&app, e.event_x);
-                        // Логика здесь уже хорошая: перерисовка ТОЛЬКО если сменилось окно под мышкой
+                        // The logic here is already good: redraw ONLY if the window under the mouse changes
                         if new_hovered != app.hovered_window {
                             app.hovered_window = new_hovered;
                             should_redraw = true;
                         }
                     }
                 },
-                // !!! ИЗМЕНЕНИЕ 2: Обработка ухода мыши с окна !!!
+                // !!! CHANGE 2: Handling mouse leaving the window !!!
                 Event::LeaveNotify(e) => {
-                    // Проверяем detail != NotifyInferior, чтобы не сбрасывать hover,
-                    // если мышь перешла на дочернее окно (например, иконку в трее, если она внутри панели)
+                    // Check detail != NotifyInferior to not reset hover,
+                    // if mouse moved to a child window (e.g. tray icon if it's inside the panel)
                     if e.event == win_id && e.detail != NotifyDetail::INFERIOR {
                         if app.hovered_window.is_some() {
                             app.hovered_window = None;
-                            app.mouse_x = -1; // Сброс позиции X
+                            app.mouse_x = -1; // Reset X position
                             should_redraw = true;
                         }
                     }
@@ -229,7 +229,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-// ... (get_hovered_window и fetch_window_data БЕЗ ИЗМЕНЕНИЙ) ...
+// ... (get_hovered_window and fetch_window_data UNCHANGED) ...
 fn get_hovered_window(app: &AppState, mouse_x: i16) -> Option<Window> {
     for (start, end, win) in &app.click_regions {
         if mouse_x >= *start && mouse_x <= *end {
@@ -322,7 +322,7 @@ fn fetch_window_data(conn: &RustConnection, atoms: &Atoms, win: Window) -> Cache
     }
 }
 
-// !!! ИЗМЕНЕНИЕ 3: Оптимизация redraw (использование общего буфера векторов) !!!
+// !!! CHANGE 3: Optimizing redraw (using shared vector buffer) !!!
 fn redraw(app: &mut AppState) -> Result<(), Box<dyn std::error::Error>> {
     let draw_target = app.pixmap_id;
 
@@ -368,15 +368,15 @@ fn redraw(app: &mut AppState) -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|r| r.value32().and_then(|mut i| i.next()))
         .unwrap_or(0);
 
-    // ОПТИМИЗАЦИЯ: Используем буфер из AppState вместо создания нового вектора
+    // OPTIMIZATION: Using buffer from AppState instead of creating a new vector
     app.raw_windows_buf.clear();
     if let Ok(reply) = client_cookie.reply() {
         if let Some(list) = reply.value32() {
-            // extend вместо создания нового Vec
+            // extend instead of creating a new Vec
             app.raw_windows_buf.extend(list);
         }
     }
-    // Фолбек для окон без _NET_CLIENT_LIST
+    // Fallback for windows without _NET_CLIENT_LIST
     if app.raw_windows_buf.is_empty() {
         if let Ok(tree) = app.conn.query_tree(root)?.reply() {
             for w in tree.children {
@@ -396,7 +396,7 @@ fn redraw(app: &mut AppState) -> Result<(), Box<dyn std::error::Error>> {
     let mut visible_windows: Vec<WindowDrawData> = Vec::new();
     let mut total_ideal_width: f32 = 0.0;
 
-    // Итерация по кешированному вектору
+    // Iterating over the cached vector
     for &w in &app.raw_windows_buf {
         if !app.window_cache.contains_key(&w) {
             let type_cookie = app.conn.get_property(false, w, app.atoms._net_wm_window_type, AtomEnum::ATOM, 0, 1024).ok();
@@ -506,9 +506,9 @@ fn redraw(app: &mut AppState) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// ... (ВСЕ ОСТАЛЬНЫЕ ФУНКЦИИ БЕЗ ИЗМЕНЕНИЙ) ...
+// ... (ALL OTHER FUNCTIONS UNCHANGED) ...
 // draw_icon_fast, draw_text_render, calculate_text_width, shorten_text_to_fit, layout_paragraph, handle_click, handle_docking, Atoms
-// ... Вставьте их сюда ...
+// ... Insert them here ...
 fn draw_icon_fast(
     conn: &RustConnection, target: Drawable, gc: Gcontext,
     pixels: &[u8], width: u16, height: u16,
